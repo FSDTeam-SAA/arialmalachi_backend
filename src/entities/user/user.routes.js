@@ -9,7 +9,10 @@ import {
      deleteOwnAccountController,
      adminGetUserByIdController,
      adminUpdateUserController,
-     adminDeleteUserController
+     adminDeleteUserController,
+     getAdminAnalyticsController,
+     blockUserController,
+     unblockUserController
     } from "./user.controller.js";
 import { adminMiddleware,  verifyToken } from "../../core/middlewares/authMiddleware.js";
 import express from "express";
@@ -22,6 +25,9 @@ const router = express.Router();
 router.get("/all-users", verifyToken, adminMiddleware , getAllUsersController);
 router.get("/all-admins", verifyToken, adminMiddleware,  getAllAdminsController);
 router.get("/all-sellers", verifyToken, adminMiddleware, getAllSelleresController);
+router.get("/analytics", verifyToken, adminMiddleware, getAdminAnalyticsController);
+router.patch("/:id/block", verifyToken, adminMiddleware, blockUserController);
+router.patch("/:id/unblock", verifyToken, adminMiddleware, unblockUserController);
 
 // user
 router.get("/me", verifyToken, getUserProfileController);

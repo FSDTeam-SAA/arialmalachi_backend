@@ -16,6 +16,20 @@ export const verifyToken = async (req, res, next) => {
     if (!user) {
       return generateResponse(res, 401, false, 'User not found', null);
     }
+    if (user.isBlocked) {
+      if (!user.isPermanentBlock && user.blockedUntil && user.blockedUntil < new Date()) {
+        // Auto-unblock if time expired
+        user.isBlocked = false;
+        user.blockedUntil = null;
+        await user.save();
+      } else {
+        const message = user.isPermanentBlock 
+          ? 'Your account has been permanently blocked.' 
+          : `Your account is blocked until ${user.blockedUntil.toLocaleString()}.`;
+        return generateResponse(res, 403, false, message, null);
+      }
+    }
+
     req.user = user;
     next();
   }

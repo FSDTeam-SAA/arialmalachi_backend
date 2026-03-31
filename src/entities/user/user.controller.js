@@ -19,8 +19,10 @@ import {
   deleteUserPDF,
   adminGetUserById,
   adminUpdateUser,
-  adminDeleteUser
-
+  adminDeleteUser,
+  getAdminAnalytics,
+  blockUser,
+  unblockUser
 } from "./user.service.js";
 
 
@@ -261,4 +263,35 @@ export const deleteUserPDFController = async (req, res) => {
 
 
 
+
+export const getAdminAnalyticsController = async (req, res) => {
+  try {
+    const analytics = await getAdminAnalytics();
+    generateResponse(res, 200, true, 'Admin analytics fetched successfully', analytics);
+  } catch (error) {
+    console.error('Error in getAdminAnalyticsController:', error);
+    generateResponse(res, 500, false, 'Failed to fetch admin analytics', null);
+  }
+};
+
+export const blockUserController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { duration, unit, isPermanent } = req.body;
+    const user = await blockUser(id, { duration, unit, isPermanent });
+    generateResponse(res, 200, true, "User blocked successfully", user);
+  } catch (error) {
+    generateResponse(res, 500, false, "Failed to block user", error.message);
+  }
+};
+
+export const unblockUserController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await unblockUser(id);
+    generateResponse(res, 200, true, "User unblocked successfully", user);
+  } catch (error) {
+    generateResponse(res, 500, false, "Failed to unblock user", error.message);
+  }
+};
 

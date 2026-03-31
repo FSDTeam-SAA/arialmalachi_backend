@@ -17,6 +17,7 @@ import notFound from './core/middlewares/notFound.js';
 import { globalLimiter } from './lib/limit.js';
 import appRouter from './core/app/appRouter.js';
 import { globalErrorHandler } from './core/middlewares/globalErrorHandler.js';
+import { initPaymentCheckCron } from './core/app/cronJobs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,9 +29,7 @@ app.use(helmet());
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5000',
-  'https://mohamedeltawous-website.vercel.app',
-  'http://secondsight.tech',
-  'https://secondsight.tech'
+
 ];
 
 const corsOptions = {
@@ -84,7 +83,7 @@ app.use(globalErrorHandler);
 
 logger.info('Middleware stack initialized');
 
-// Initialize payment check cron job (runs every 5 seconds)
-// initPaymentCheckCron();
+// Initialize payment check cron job (runs every minute)
+initPaymentCheckCron();
 
 export { app };

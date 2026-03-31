@@ -1,6 +1,7 @@
 import { createFilter, createPaginationInfo } from "../../lib/pagination.js";
 import cloudinary, { cloudinaryUpload } from "../../lib/cloudinaryUpload.js";
 import User from "../auth/auth.model.js";
+import SubscriptionTransaction from "../subscription/subscriptionTransaction.model.js";
 import RoleType from "../../lib/types.js";
 import fs from "fs";
 
@@ -13,6 +14,7 @@ export const getAllUsers = async ({ page = 1, limit = 10, search, date }) => {
 
   const totalUsers = await User.countDocuments(filter);
   const users = await User.find(filter)
+    .populate("planId", "name monthlyPrice credits")
     .select("-password -createdAt -updatedAt -__v -verificationCode -verificationCodeExpires")
     .sort({ createdAt: -1 })
     .skip((page - 1) * limit)
@@ -377,3 +379,98 @@ export const deleteUserPDF = async (id) => {
   return updatedUser;
 };
 
+
+// Admin Analytics
+export const getAdminAnalytics = async () => {
+  // Total user count
+  const totalUsers = await User.countDocuments({ role: RoleType.USER });
+
+  // Subscribed users per month and year
+  const subscribedUsersStats = await User.aggregate([
+    { $match: { isSubscribed: true, subscribedDate: { $ne: null } } },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$subscribedDate" },
+          month: { $month: "$subscribedDate" }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": -1, "_id.month": -1 } }
+  ]);
+
+  // Revenue per month and year
+  const revenueStats = await SubscriptionTransaction.aggregate([
+    { $match: { status: 'completed' } },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          month: { $month: "$createdAt" }
+        },
+        totalRevenue: { $sum: "$amount" },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": -1, "_id.month": -1 } }
+  ]);
+
+  return {
+    totalUsers,
+    subscribedUsersStats,
+    revenueStats
+  };
+};
+
+export const blockUser = async (userId, { duration, unit, isPermanent }) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
+
+  if (isPermanent) {
+    user.isBlocked = true;
+    user.isPermanentBlock = true;
+    user.blockedUntil = null;
+  } else {
+    const now = new Date();
+    let blockedUntil = new Date(now);
+
+    if (unit === 'minutes') blockedUntil.setMinutes(now.getMinutes() + duration);
+    else if (unit === 'hours') blockedUntil.setHours(now.getHours() + duration);
+    else if (unit === 'days') blockedUntil.setDate(now.getDate() + duration);
+    else throw new Error('Invalid duration unit');
+
+    user.isBlocked = true;
+    user.isPermanentBlock = false;
+    user.blockedUntil = blockedUntil;
+  }
+
+  return await user.save();
+};
+
+export const unblockUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
+
+  user.isBlocked = false;
+  user.isPermanentBlock = false;
+  user.blockedUntil = null;
+
+  return await user.save();
+};
+
+export const checkAutoUnblock = async () => {
+  const now = new Date();
+  const blockedUsers = await User.find({
+    isBlocked: true,
+    isPermanentBlock: false,
+    blockedUntil: { $lt: now }
+  });
+
+  for (const user of blockedUsers) {
+    user.isBlocked = false;
+    user.blockedUntil = null;
+    await user.save();
+    console.log(`Auto-unblocked user: ${user.email}`);
+  }
+};

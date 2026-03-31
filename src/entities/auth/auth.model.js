@@ -75,7 +75,18 @@ const UserSchema = new mongoose.Schema(
 
     hasActiveSubscription: { type: Boolean, default: false },
     subscriptionExpireDate: { type: Date, default: null },
+    
+    // New subscription fields
+    planId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan', default: null },
+    isSubscribed: { type: Boolean, default: false },
+    credits: { type: Number, default: 0 },
+    expiryDate: { type: Date, default: null },
+    subscribedDate: { type: Date, default: null },
+
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    isBlocked: { type: Boolean, default: false },
+    blockedUntil: { type: Date, default: null },
+    isPermanentBlock: { type: Boolean, default: false },
     language: { type: String, default: 'en' }
   },
   { timestamps: true }

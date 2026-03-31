@@ -1,7 +1,10 @@
 export const createFilter = (search, date) => {
   let filter = {};
   if (search) {
-    filter.name = { $regex: search, $options: "i" };
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { email: { $regex: search, $options: "i" } }
+    ];
   }
   if (date) {
     const _date = new Date(date);
