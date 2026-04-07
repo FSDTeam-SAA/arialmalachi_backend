@@ -1,0 +1,226 @@
+{
+  "info": {
+    "_postman_id": "generation-apis",
+    "name": "Poster & Logo Generation APIs",
+    "description": "Collection for testing Poster and Logo Generation endpoints. Simplified flow: Initiate -> Result (using generationId).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Utilities",
+      "item": [
+        {
+          "name": "Get Credit Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/credits/balance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "credits", "balance"]
+            }
+          }
+        },
+        {
+          "name": "Get Generation History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/history?type=all&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "history"],
+              "query": [
+                { "key": "type", "value": "all" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Poster Generation",
+      "item": [
+        {
+          "name": "Generate Poster Complete (Initiate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.generationId) {",
+                  "    pm.collectionVariables.set(\"lastGenerationId\", response.data.generationId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "Summer Sale 2024", "type": "text" },
+                { "key": "subtitle", "value": "Get up to 50% off", "type": "text" },
+                { "key": "description", "value": "Limited time offer", "type": "text" },
+                { "key": "brand_name", "value": "ShopHub", "type": "text" },
+                { "key": "primary_color", "value": "#FF5733", "type": "text" },
+                { "key": "secondary_color", "value": "#33FF57", "type": "text" },
+                { "key": "cta", "value": "Shop Now", "type": "text" },
+                { "key": "design_style_prompt", "value": "modern and vibrant", "type": "text" },
+                { "key": "style_preset", "value": "bold", "type": "text" },
+                { "key": "output_format", "value": "png", "type": "text" },
+                { "key": "language", "value": "en", "type": "text" },
+                { "key": "variations", "value": "3", "type": "text" },
+                { "key": "image", "type": "file", "src": [], "description": "Optional: Upload an image file" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/poster/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "poster", "initiate"]
+            }
+          }
+        },
+        {
+          "name": "Get Poster Result",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/poster/result/{{lastGenerationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "poster", "result", "{{lastGenerationId}}"]
+            },
+            "description": "Uses only the generationId to fetch all results/variations."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logo Generation",
+      "item": [
+        {
+          "name": "Generate Logo Api (Initiate)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.generationId) {",
+                  "    pm.collectionVariables.set(\"lastGenerationId\", response.data.generationId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "brand_name", "value": "TechCorp", "type": "text" },
+                { "key": "tagline", "value": "Innovation at Scale", "type": "text" },
+                { "key": "vision", "value": "Leading technology", "type": "text" },
+                { "key": "industry", "value": "technology", "type": "text" },
+                { "key": "logo_style", "value": "modern", "type": "text" },
+                { "key": "color_palette", "value": "#0066CC,#38BDF8,#FFFFFF", "type": "text" },
+                { "key": "language", "value": "en", "type": "text" },
+                { "key": "reference_image", "type": "file", "src": [], "description": "Optional: Upload a reference image" }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/logo/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "logo", "initiate"]
+            }
+          }
+        },
+        {
+          "name": "Get Logo Result",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/logo/result/{{lastGenerationId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "logo", "result", "{{lastGenerationId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Content Assistant",
+      "item": [
+        {
+          "name": "Step 1: Ai Generate Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.data && response.data.generated_fields) {",
+                  "    pm.collectionVariables.set(\"lastAiJobId\", response.data.generated_fields);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idea\": \"Create a poster for a tech startup conference\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/poster/fields/ai-generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "poster", "fields", "ai-generate"]
+            }
+          }
+        },
+        {
+          "name": "Step 2: Get AI Result Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/generations/poster/fields/{{lastAiJobId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "generations", "poster", "fields", "{{lastAiJobId}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:5000" },
+    { "key": "token", "value": "YOUR_AUTH_TOKEN" },
+    { "key": "lastGenerationId", "value": "" },
+    { "key": "lastAiJobId", "value": "" }
+  ]
+}

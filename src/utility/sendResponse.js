@@ -1,4 +1,4 @@
-export const sendResponse = (res, options = {}) => {
+const sendResponse = (res, options = {}) => {
   const {
     statusCode = 200,
     success = statusCode < 400,
@@ -24,6 +24,9 @@ export const sendResponse = (res, options = {}) => {
 
   return res.status(statusCode).json(response);
 };
+
+export { sendResponse };
+export default sendResponse;
 
 const getHttpStatusName = (statusCode) => {
   const map = {
