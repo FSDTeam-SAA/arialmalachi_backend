@@ -9,5 +9,5 @@ export const globalErrorHandler = (err, req, res, next) => {
     errors: err.errors,
   });
 
-  next();
+  // Do not call next() here as this is the final error handler
 };
