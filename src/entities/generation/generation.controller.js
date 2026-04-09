@@ -14,19 +14,24 @@ import { AppError } from '../../utility/AppError.js';
  * 
  * Required body:
  * {
- *   "title": "string",              // Required
- *   "subtitle": "string",
- *   "description": "string",
- *   "brand_name": "string",
- *   "primary_color": "string",      // Hex color
- *   "secondary_color": "string",    // Hex color
- *   "cta": "string",                // Call to action
- *   "design_style_prompt": "string",
- *   "style_preset": "string",
- *   "output_format": "string",
- *   "language": "string",
- *   "variations": number,
- *   "image": "string"               // Image URL
+ *   "title": "string",              // ✅ REQUIRED
+ *   "title_font": "string",         // Optional: Font for title
+ *   "subtitle": "string",           // ✅ REQUIRED
+ *   "subtitle_font": "string",      // Optional: Font for subtitle
+ *   "tagline": "string",            // Optional: Tagline/slogan
+ *   "brand_name": "string",         // ✅ REQUIRED
+ *   "primary_color": "string",      // ✅ REQUIRED - Hex color
+ *   "secondary_color": "string",    // ✅ REQUIRED - Hex color
+ *   "cta": "string",                // Optional: Call to action
+ *   "phone": "string",              // Optional: Phone number
+ *   "address": "string",            // Optional: Address
+ *   "website": "string",            // Optional: Website URL
+ *   "design_style_prompt": "string",// Optional: Style description
+ *   "style_preset": "string",       // Optional: Preset style
+ *   "output_format": "string",      // Optional: png, jpg, webp
+ *   "language": "string",           // Optional: Language code
+ *   "variations": "number",         // Optional: 1-5 variations
+ *   "image": "string"               // Optional: Image URL or base64
  * }
  */
 const initiatePoster = catchAsync(async (req, res) => {
@@ -41,8 +46,11 @@ const initiatePoster = catchAsync(async (req, res) => {
   }
 
   // Validate required fields
-  if (!posterData?.title) {
-    throw new AppError('Poster title is required in request body', 400);
+  const requiredFields = ['title', 'subtitle', 'brand_name', 'primary_color', 'secondary_color'];
+  const missingFields = requiredFields.filter(field => !posterData?.[field]);
+  
+  if (missingFields.length > 0) {
+    throw new AppError(`Missing required fields: ${missingFields.join(', ')}`, 400);
   }
 
   const result = await generationWorkflowService.initiatePosterGeneration(userId, posterData);

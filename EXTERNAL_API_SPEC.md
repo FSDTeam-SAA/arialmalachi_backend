@@ -14,18 +14,23 @@ This document specifies the exact request body formats expected by the external 
 
 ```json
 {
-  "title": "string",                    // Required: Poster title
-  "subtitle": "string",                 // Optional: Poster subtitle
-  "description": "string",              // Optional: Detailed description
-  "brand_name": "string",               // Optional: Brand/company name
-  "primary_color": "string",            // Optional: Primary color (hex #RRGGBB)
-  "secondary_color": "string",          // Optional: Secondary color (hex #RRGGBB)
+  "title": "string",                    // ✅ REQUIRED: Poster title
+  "title_font": "string",               // Optional: Font for title
+  "subtitle": "string",                 // ✅ REQUIRED: Poster subtitle
+  "subtitle_font": "string",            // Optional: Font for subtitle
+  "tagline": "string",                  // Optional: Tagline/slogan
+  "brand_name": "string",               // ✅ REQUIRED: Brand/company name
+  "primary_color": "string",            // ✅ REQUIRED: Primary color (hex #RRGGBB)
+  "secondary_color": "string",          // ✅ REQUIRED: Secondary color (hex #RRGGBB)
   "cta": "string",                      // Optional: Call-to-action text
+  "phone": "string",                    // Optional: Phone number
+  "address": "string",                  // Optional: Address
+  "website": "string",                  // Optional: Website URL
   "design_style_prompt": "string",      // Optional: Style description (modern, vintage, minimalist, etc)
   "style_preset": "string",             // Optional: Predefined style (professional, casual, bold, elegant)
   "output_format": "string",            // Optional: Format (png, jpg, webp)
   "language": "string",                 // Optional: Language code (en, es, fr, de, etc)
-  "variations": "number",               // Optional: Number of variations to generate (1-5)
+  "variations": "integer",              // Optional: Number of variations to generate (1-5)
   "image": "string | null"              // Optional: Reference image URL or base64 encoded
 }
 ```
@@ -35,12 +40,17 @@ This document specifies the exact request body formats expected by the external 
 ```json
 {
   "title": "Summer Sale 2024",
+  "title_font": "Arial Bold",
   "subtitle": "Get Up to 50% Off",
-  "description": "Shop our summer collection with incredible discounts",
+  "subtitle_font": "Arial",
+  "tagline": "Limited Time Offer",
   "brand_name": "FashionCo",
   "primary_color": "#FF6B9D",
   "secondary_color": "#FFA502",
   "cta": "Shop Now",
+  "phone": "+1-800-FASHION",
+  "address": "123 Fashion Ave, New York, NY",
+  "website": "www.fashionco.com",
   "design_style_prompt": "vibrant and energetic with tropical vibes",
   "style_preset": "bold",
   "output_format": "png",

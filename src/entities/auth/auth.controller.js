@@ -102,6 +102,10 @@ export const forgetPassword = async (req, res, next) => {
       generateResponse(res, 400, false, 'Invalid email', null);
     }
 
+    else if (error.message.includes('Failed to send email')) {
+      generateResponse(res, 500, false, 'Failed to send email. Please try again later.', null);
+    }
+
     else {
       next(error)
     }

@@ -46,15 +46,33 @@ All endpoints require authentication (Bearer token in Authorization header).
 **Request Body:**
 ```json
 {
-  "posterData": {
-    "title": "Summer Sale",
-    "description": "Best deals of the season",
-    "images": ["url1", "url2"],
-    "colors": ["#FF5733", "#33FF57"],
-    "style": "modern"
-  }
+  "title": "Summer Sale 2024",
+  "title_font": "Arial Bold",
+  "subtitle": "Get Up to 50% Off",
+  "subtitle_font": "Arial",
+  "tagline": "Limited Time Offer",
+  "brand_name": "FashionCo",
+  "primary_color": "#FF6B9D",
+  "secondary_color": "#FFA502",
+  "cta": "Shop Now",
+  "phone": "+1-800-FASHION",
+  "address": "123 Fashion Ave, New York, NY",
+  "website": "www.fashionco.com",
+  "design_style_prompt": "vibrant and energetic with tropical vibes",
+  "style_preset": "bold",
+  "output_format": "png",
+  "language": "en",
+  "variations": 3,
+  "image": null
 }
 ```
+
+**Required Fields:**
+- `title` - Poster title
+- `subtitle` - Poster subtitle
+- `brand_name` - Brand/company name
+- `primary_color` - Primary color (hex #RRGGBB)
+- `secondary_color` - Secondary color (hex #RRGGBB)
 
 **Response:**
 ```json

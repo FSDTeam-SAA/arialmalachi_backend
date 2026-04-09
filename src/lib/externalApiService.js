@@ -31,12 +31,17 @@ class ExternalApiService {
    * 
    * @param {Object} data - Poster generation parameters
    * @param {string} data.title - Poster title (required)
-   * @param {string} [data.subtitle] - Poster subtitle
-   * @param {string} [data.description] - Poster description
-   * @param {string} [data.brand_name] - Brand name
-   * @param {string} [data.primary_color] - Primary color (hex)
-   * @param {string} [data.secondary_color] - Secondary color (hex)
+   * @param {string} [data.title_font] - Font for title
+   * @param {string} [data.subtitle] - Poster subtitle (required)
+   * @param {string} [data.subtitle_font] - Font for subtitle
+   * @param {string} [data.tagline] - Tagline/slogan
+   * @param {string} [data.brand_name] - Brand name (required)
+   * @param {string} [data.primary_color] - Primary color (hex) (required)
+   * @param {string} [data.secondary_color] - Secondary color (hex) (required)
    * @param {string} [data.cta] - Call-to-action text
+   * @param {string} [data.phone] - Phone number
+   * @param {string} [data.address] - Address
+   * @param {string} [data.website] - Website URL
    * @param {string} [data.design_style_prompt] - Design style prompt
    * @param {string} [data.style_preset] - Style preset
    * @param {string} [data.output_format] - Output format (png, jpg, etc)

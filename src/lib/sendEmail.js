@@ -45,7 +45,7 @@ const sendEmail = async ({ to, subject, html }) => {
   } catch (error) {
     console.error('Email send error:', error.message);
     console.error('Error details:', error);
-    return { success: false, error: error.message };
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
