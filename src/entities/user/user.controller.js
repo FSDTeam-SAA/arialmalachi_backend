@@ -22,7 +22,8 @@ import {
   adminDeleteUser,
   getAdminAnalytics,
   blockUser,
-  unblockUser
+  unblockUser,
+  getAllUsersGenerationHistory
 } from "./user.service.js";
 
 
@@ -33,6 +34,16 @@ export const getAllUsersController = async (req, res) => {
     generateResponse(res, 200, true, 'Users fetched successfully', { users, paginationInfo });
   } catch (error) {
     generateResponse(res, 500, false, 'Failed to fetch users', null);
+  }
+};
+
+export const getAllUsersGenerationHistoryController = async (req, res) => {
+  try {
+    const { page, limit, search, date } = req.query;
+    const { generationSummary, paginationInfo } = await getAllUsersGenerationHistory({ page, limit, search, date });
+    generateResponse(res, 200, true, 'Users generation history fetched successfully', { generationSummary, paginationInfo });
+  } catch (error) {
+    generateResponse(res, 500, false, 'Failed to fetch users generation history', null);
   }
 };
 

@@ -12,7 +12,8 @@ import {
      adminDeleteUserController,
      getAdminAnalyticsController,
      blockUserController,
-     unblockUserController
+     unblockUserController,
+     getAllUsersGenerationHistoryController
     } from "./user.controller.js";
 import { adminMiddleware,  verifyToken } from "../../core/middlewares/authMiddleware.js";
 import express from "express";
@@ -23,6 +24,7 @@ const router = express.Router();
 
 // Admin dashboard
 router.get("/all-users", verifyToken, adminMiddleware , getAllUsersController);
+router.get("/all-users/generation-history", verifyToken, adminMiddleware, getAllUsersGenerationHistoryController);
 router.get("/all-admins", verifyToken, adminMiddleware,  getAllAdminsController);
 router.get("/all-sellers", verifyToken, adminMiddleware, getAllSelleresController);
 router.get("/analytics", verifyToken, adminMiddleware, getAdminAnalyticsController);

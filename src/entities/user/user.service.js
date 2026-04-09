@@ -1,6 +1,7 @@
 import { createFilter, createPaginationInfo } from "../../lib/pagination.js";
 import cloudinary, { cloudinaryUpload } from "../../lib/cloudinaryUpload.js";
 import User from "../auth/auth.model.js";
+import Generation from "../generation/generation.model.js";
 import SubscriptionTransaction from "../subscription/subscriptionTransaction.model.js";
 import RoleType from "../../lib/types.js";
 import fs from "fs";
@@ -25,6 +26,97 @@ export const getAllUsers = async ({ page = 1, limit = 10, search, date }) => {
   return { users, paginationInfo };
 };
 
+// Get all users' generation history summary for admin
+export const getAllUsersGenerationHistory = async ({ page = 1, limit = 10, search, date }) => {
+  const filter = createFilter(search, date);
+  filter.role = "USER";
+
+  // Get total count of users
+  const totalUsers = await User.countDocuments(filter);
+
+  // Get paginated users first
+  const users = await User.find(filter)
+    .select('name email credits planId isSubscribed expiryDate subscribedDate')
+    .populate('planId', 'name monthlyPrice credits')
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit);
+
+  // Get user IDs for the current page
+  const userIds = users.map(user => user._id);
+
+  // Aggregate detailed generation data for these users
+  const generationData = await Generation.aggregate([
+    {
+      $match: {
+        userId: { $in: userIds }
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $group: {
+        _id: "$userId",
+        generations: {
+          $push: {
+            _id: "$_id",
+            generationType: "$generationType",
+            jobId: "$jobId",
+            taskIds: "$taskIds",
+            status: "$status",
+            creditCost: "$creditCost",
+            creditDeducted: "$creditDeducted",
+            inputData: "$inputData",
+            resultUrls: "$resultUrls",
+            error: "$error",
+            createdAt: "$createdAt",
+            updatedAt: "$updatedAt"
+          }
+        }
+      }
+    }
+  ]);
+
+  // Combine user data with generation data
+  const generationSummary = users.map(user => {
+    const userGenerations = generationData.find(gen => gen._id.toString() === user._id.toString());
+    const generations = userGenerations ? userGenerations.generations : [];
+
+    const posters = generations.filter(gen => gen.generationType === 'poster');
+    const logos = generations.filter(gen => gen.generationType === 'logo');
+
+    return {
+      userId: user._id,
+      userName: user.name,
+      userEmail: user.email,
+      posterCount: posters.length,
+      logoCount: logos.length,
+      totalGenerations: generations.length,
+      remainingCredits: user.credits || 0,
+      plan: user.planId || null,
+      subscriptionStatus: {
+        isSubscribed: user.isSubscribed || false,
+        expiryDate: user.expiryDate,
+        subscribedDate: user.subscribedDate
+      },
+      posters: posters,
+      logos: logos
+    };
+  });
+
+  // Sort by totalGenerations descending, then by userName ascending
+  generationSummary.sort((a, b) => {
+    if (b.totalGenerations !== a.totalGenerations) {
+      return b.totalGenerations - a.totalGenerations;
+    }
+    return a.userName.localeCompare(b.userName);
+  });
+
+  const paginationInfo = createPaginationInfo(page, limit, totalUsers);
+
+  return { generationSummary, paginationInfo };
+};
 
 // Get all admins
 export const getAllAdmins = async ({ page = 1, limit = 10, search, date }) => {
@@ -416,10 +508,124 @@ export const getAdminAnalytics = async () => {
     { $sort: { "_id.year": -1, "_id.month": -1 } }
   ]);
 
+  // Total poster and logo designs
+  const designStats = await Generation.aggregate([
+    {
+      $group: {
+        _id: "$generationType",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const totalPosterDesigns = designStats.find(stat => stat._id === 'poster')?.count || 0;
+  const totalLogoDesigns = designStats.find(stat => stat._id === 'logo')?.count || 0;
+
+  // Yearly analytics (users per year, designs per year, active users per year)
+  const yearlyUserStats = await User.aggregate([
+    { $match: { role: RoleType.USER } },
+    {
+      $group: {
+        _id: { $year: "$createdAt" },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id": -1 } }
+  ]);
+
+  const yearlyDesignStats = await Generation.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          generationType: "$generationType"
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id.year": -1 } }
+  ]);
+
+  // Active users per year (users with generation activity per year)
+  const yearlyActiveUsers = await Generation.aggregate([
+    {
+      $group: {
+        _id: {
+          year: { $year: "$createdAt" },
+          userId: "$userId"
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$_id.year",
+        activeUserCount: { $sum: 1 }
+      }
+    },
+    { $sort: { "_id": -1 } }
+  ]);
+
+  // Process yearly analytics into structured format
+  const yearlyAnalytics = {};
+  
+  // Add user counts per year
+  yearlyUserStats.forEach(stat => {
+    if (!yearlyAnalytics[stat._id]) yearlyAnalytics[stat._id] = {};
+    yearlyAnalytics[stat._id].totalUsers = stat.count;
+  });
+
+  // Add design counts per year
+  yearlyDesignStats.forEach(stat => {
+    if (!yearlyAnalytics[stat._id.year]) yearlyAnalytics[stat._id.year] = {};
+    if (stat._id.generationType === 'poster') {
+      yearlyAnalytics[stat._id.year].totalPosterDesigns = stat.count;
+    } else if (stat._id.generationType === 'logo') {
+      yearlyAnalytics[stat._id.year].totalLogoDesigns = stat.count;
+    }
+  });
+
+  // Add active users per year
+  yearlyActiveUsers.forEach(stat => {
+    if (!yearlyAnalytics[stat._id]) yearlyAnalytics[stat._id] = {};
+    yearlyAnalytics[stat._id].activeUsers = stat.activeUserCount;
+  });
+
+  // Fill missing values with 0
+  Object.keys(yearlyAnalytics).forEach(year => {
+    yearlyAnalytics[year].totalPosterDesigns = yearlyAnalytics[year].totalPosterDesigns || 0;
+    yearlyAnalytics[year].totalLogoDesigns = yearlyAnalytics[year].totalLogoDesigns || 0;
+    yearlyAnalytics[year].activeUsers = yearlyAnalytics[year].activeUsers || 0;
+  });
+
+  // Convert to array and sort by year descending
+  const yearlyAnalyticsArray = Object.entries(yearlyAnalytics)
+    .map(([year, data]) => ({ year: parseInt(year), ...data }))
+    .sort((a, b) => b.year - a.year);
+
+  // Calculate total cumulative revenue
+  const totalRevenueData = await SubscriptionTransaction.aggregate([
+    { $match: { status: 'completed' } },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: "$amount" }
+      }
+    }
+  ]);
+
+  const totalRevenue = totalRevenueData.length > 0 ? totalRevenueData[0].totalRevenue : 0;
+
   return {
+    // Existing fields
     totalUsers,
     subscribedUsersStats,
-    revenueStats
+    revenueStats,
+    
+    // New fields
+    totalPosterDesigns,
+    totalLogoDesigns,
+    totalRevenue,
+    yearlyAnalytics: yearlyAnalyticsArray
   };
 };
 
