@@ -227,6 +227,31 @@ const getGenerationHistory = catchAsync(async (req, res) => {
 });
 
 /**
+ * DELETE /api/generations/history/:id
+ * Delete a specific generation history item
+ */
+const deleteGenerationHistory = catchAsync(async (req, res) => {
+  const { id: userId } = req.user;
+  const { id: generationId } = req.params;
+
+  if (!generationId) {
+    throw new AppError('Generation ID is required', 400);
+  }
+
+  const deleted = await generationWorkflowService.deleteUserGeneration(userId, generationId);
+
+  if (!deleted) {
+    throw new AppError('Generation not found or already deleted', 404);
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Generation deleted successfully',
+  });
+});
+
+/**
  * GET /api/generations/credits/balance
  * Get user's current credit balance
  */
@@ -248,6 +273,23 @@ const getCreditBalance = catchAsync(async (req, res) => {
   });
 });
 
+/**
+ * GET /api/generations/dashboard
+ * Get user's dashboard overview analytics
+ */
+const getDashboardOverview = catchAsync(async (req, res) => {
+  const { id: userId } = req.user;
+
+  const overview = await generationWorkflowService.getUserDashboardOverview(userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Dashboard overview retrieved successfully',
+    data: overview,
+  });
+});
+
 export const generationController = {
   // Poster endpoints
   initiatePoster,
@@ -259,7 +301,9 @@ export const generationController = {
   getLogoResult,
   // Utility endpoints
   getGenerationHistory,
+  deleteGenerationHistory,
   getCreditBalance,
+  getDashboardOverview,
 };
 
 export default generationController;

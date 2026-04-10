@@ -3,6 +3,7 @@
  * Integrates external API calls with credit management
  */
 
+import mongoose from 'mongoose';
 import Generation from './generation.model.js';
 import externalApiService from '../../lib/externalApiService.js';
 import generationService from '../../lib/generationService.js';
@@ -443,6 +444,61 @@ class GenerationWorkflowService {
         .select('generationType status resultUrls creditCost createdAt');
     } catch (error) {
       console.error('Error fetching generation history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a specific generation record for user
+   * @param {string} userId - User ID
+   * @param {string} generationId - Generation ID
+   * @returns {Promise<boolean>} - True if deleted, false if not found
+   */
+  async deleteUserGeneration(userId, generationId) {
+    try {
+      const result = await Generation.findOneAndDelete({ _id: generationId, userId });
+      return !!result;
+    } catch (error) {
+      console.error('Error deleting generation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get dashboard overview for user
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} - Dashboard analytics
+   */
+  async getUserDashboardOverview(userId) {
+    try {
+      const pipeline = [
+        { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+        {
+          $group: {
+            _id: null,
+            totalDesigns: { $sum: 1 },
+            totalPosters: {
+              $sum: { $cond: [{ $eq: ['$generationType', 'poster'] }, 1, 0] }
+            },
+            totalLogos: {
+              $sum: { $cond: [{ $eq: ['$generationType', 'logo'] }, 1, 0] }
+            },
+            totalCreditsUsed: {
+              $sum: { $cond: ['$creditDeducted', '$creditCost', 0] }
+            }
+          }
+        }
+      ];
+
+      const result = await Generation.aggregate(pipeline);
+      return result[0] || {
+        totalDesigns: 0,
+        totalPosters: 0,
+        totalLogos: 0,
+        totalCreditsUsed: 0
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard overview:', error);
       throw error;
     }
   }

@@ -61,9 +61,21 @@ router.post('/logo/result/:generationId', generationController.getLogoResult);
 router.get('/history', generationController.getGenerationHistory);
 
 /**
+ * DELETE /api/generations/history/:id
+ * Delete a specific generation history item
+ */
+router.delete('/history/:id', generationController.deleteGenerationHistory);
+
+/**
  * GET /api/generations/credits/balance
  * Get user's current credit balance
  */
 router.get('/credits/balance', generationController.getCreditBalance);
+
+/**
+ * GET /api/generations/dashboard
+ * Get user's dashboard overview analytics
+ */
+router.get('/dashboard', generationController.getDashboardOverview);
 
 export default router;
