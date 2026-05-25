@@ -9,7 +9,38 @@ import externalApiService from '../../lib/externalApiService.js';
 import generationService from '../../lib/generationService.js';
 
 class GenerationWorkflowService {
-  
+  async pollForResult(id, getResult, type) {
+    const delayMs = 5000; // 5 seconds
+    const failedStatuses = new Set(['FAILURE', 'FAILED', 'failed', 'ERROR', 'error']);
+    let attempt = 1;
+
+    while (true) {
+      try {
+        const apiResponse = await getResult(id);
+        const urls = this.extractUrls(apiResponse);
+
+        if (urls.length > 0) {
+          return urls;
+        }
+
+        if (failedStatuses.has(apiResponse?.status)) {
+          throw new Error(`${type} task ${id} failed with status: ${apiResponse.status}`);
+        }
+
+        console.log(`Task ${id} not ready yet. Status: ${apiResponse?.status || 'unknown'}. Attempt ${attempt}`);
+      } catch (err) {
+        console.error(`Error fetching ${type} result for task ${id} on attempt ${attempt}:`, err);
+
+        if (err.message?.includes('failed with status')) {
+          throw err;
+        }
+      }
+
+      attempt += 1;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
   /**
    * Initialize Poster Generation
    * @param {string} userId - User ID
@@ -101,35 +132,13 @@ class GenerationWorkflowService {
 
       // Step 3: Call external API to get result for all tasks in parallel, with polling
       const idsToFetch = generation.taskIds?.length > 0 ? generation.taskIds : [jobId];
-      
-      const maxRetries = 15;
-      const delayMs = 5000; // 5 seconds
 
       const results = await Promise.all(
-        idsToFetch.map(async (id) => {
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-              const apiResponse = await externalApiService.getPosterResult(id);
-              
-              // If status is SUCCESS or we have URLs, return them
-              // Adjust this condition based on the exact external API "pending" vs "success" response
-              const urls = this.extractUrls(apiResponse);
-              if (urls.length > 0 || apiResponse.status === 'SUCCESS' || apiResponse.status === 'success') {
-                return urls;
-              }
-              
-              console.log(`Task ${id} not ready yet. Status: ${apiResponse.status}. Attempt ${attempt}/${maxRetries}`);
-            } catch (err) {
-              console.error(`Error fetching result for task ${id} on attempt ${attempt}:`, err);
-            }
-            
-            // Wait before next poll
-            if (attempt < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, delayMs));
-            }
-          }
-          return []; // Return empty if we hit max retries
-        })
+        idsToFetch.map((id) => this.pollForResult(
+          id,
+          externalApiService.getPosterResult.bind(externalApiService),
+          'poster'
+        ))
       );
 
       const allResultUrls = results.flat();
@@ -263,33 +272,13 @@ class GenerationWorkflowService {
 
       // Step 3: Call external API to get result for all tasks in parallel, with polling
       const idsToFetch = generation.taskIds?.length > 0 ? generation.taskIds : [jobId];
-      
-      const maxRetries = 15;
-      const delayMs = 5000; // 5 seconds
 
       const results = await Promise.all(
-        idsToFetch.map(async (id) => {
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-              const apiResponse = await externalApiService.getLogoResult(id);
-              
-              const urls = this.extractUrls(apiResponse);
-              if (urls.length > 0 || apiResponse.status === 'SUCCESS' || apiResponse.status === 'success') {
-                return urls;
-              }
-              
-              console.log(`Task ${id} not ready yet. Status: ${apiResponse.status}. Attempt ${attempt}/${maxRetries}`);
-            } catch (err) {
-              console.error(`Error fetching result for task ${id} on attempt ${attempt}:`, err);
-            }
-            
-            // Wait before next poll
-            if (attempt < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, delayMs));
-            }
-          }
-          return [];
-        })
+        idsToFetch.map((id) => this.pollForResult(
+          id,
+          externalApiService.getLogoResult.bind(externalApiService),
+          'logo'
+        ))
       );
 
       const allResultUrls = results.flat();

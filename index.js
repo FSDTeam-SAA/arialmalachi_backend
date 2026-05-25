@@ -28,8 +28,8 @@ async function start() {
       logger.info(`Server running on port ${port}`);
     });
 
-    // Set server timeouts for long-running AI tasks
-    server.timeout = 120000; // 2 minutes
+    // Allow long-running AI polling requests to wait for external generation results.
+    server.timeout = 0;
     server.keepAliveTimeout = 65000;
     server.headersTimeout = 66000;
   } catch (err) {
